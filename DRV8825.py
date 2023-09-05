@@ -12,7 +12,7 @@ ControlMode = [
 ]
 
 class DRV8825():
-    def __init__(self, step_angle ,dir_pin, step_pin, enable_pin, mode_pins, keep_enabled=False):
+    def __init__(self, step_angle ,dir_pin, step_pin, enable_pin, mode_pins):
         self.dir_pin = dir_pin
         self.step_pin = step_pin        
         self.enable_pin = enable_pin
@@ -21,7 +21,6 @@ class DRV8825():
         self.steps_per_turn = 360 // step_angle
         self.delay = 1 / self.steps_per_turn
         self.mode = 1
-        self.keep_enabled = keep_enabled
 
         
         GPIO.setmode(GPIO.BCM)
@@ -33,11 +32,9 @@ class DRV8825():
         
     def degreeToSteps(self, degree):
         # 1 degree to however many steps
-        degree_to_step = self.step_angle**-1
-        # times the number of degrees required
-        degree_to_step *= degree
+        degree_to_step = degree/self.step_angle
         # Added microstepping modifier
-        degree_to_step *= self.mode
+        #degree_to_step *= self.mode
         
         return int(round(degree_to_step))
         
@@ -72,14 +69,34 @@ class DRV8825():
             elif step_sel == 'half':
                 mult = 2
             else:
-                mult = step_sel.split('/')[1]
+                mult = int(step_sel.split('/')[1])
+                
             self.digital_write(self.mode_pins, microstep[stepformat])
             # Microstepping modifiers
             self.delay /= mult
-            self.steps_per_turn *= mult
+            #self.steps_per_turn *= mult
             self.mode = mult
+
+    def TurnFrames(self, dir, frames):
+        # Frames to degrees 
+        # 1944 = 1 frame
+        self.TurnStep(dir, 745 * frames)
             
-    def TurnStep(self, Dir, degrees):
+    def TurnStep(self, dir, degrees):
+        
+        self.LoopSetup(dir)
+
+        if (degrees == 0):
+            return
+        steps = self.degreeToSteps(degrees)
+        print("turn step:",steps)
+        for i in range(steps):
+            self.digital_write(self.step_pin, True)
+            time.sleep(self.delay)
+            self.digital_write(self.step_pin, False)
+            time.sleep(self.delay)
+            
+    def LoopSetup(self, Dir):
         if (Dir == MotorDir[0]):
             print("forward")
             self.digital_write(self.enable_pin, 1)
@@ -91,17 +108,4 @@ class DRV8825():
         else:
             print("the dir must be : 'forward' or 'backward'")
             return
-
-        if (degrees == 0):
-            return
-        steps = self.degreeToSteps(degrees)
-        print("turn step:",steps)
-        for i in range(self.degreeToSteps(steps)):
-            self.digital_write(self.step_pin, True)
-            time.sleep(self.delay)
-            self.digital_write(self.step_pin, False)
-            time.sleep(self.delay)
-            
-        if self.keep_enabled == False:
-            self.digital_write(self.enable_pin, 0)
 
