@@ -18,7 +18,7 @@ class DRV8825():
         self.enable_pin = enable_pin
         self.mode_pins = mode_pins
         self.step_angle = step_angle
-        self.steps_per_turn = 360 // step_angle
+        self.steps_per_turn = 360 / step_angle
         self.delay = 1 / self.steps_per_turn
         self.mode = 1
 
@@ -80,16 +80,18 @@ class DRV8825():
     def TurnFrames(self, dir, frames):
         # Frames to degrees 
         # 1944 = 1 frame
-        self.TurnStep(dir, 745 * frames)
-            
-    def TurnStep(self, dir, degrees):
-        
+        self.TurnAngle(dir, 1600 * frames)
+
+    def TurnAngle(self, dir, degrees):
+        steps = self.degreeToSteps(degrees)
+        self.TurnStep(dir, steps)
+
+    def TurnStep(self, dir, steps):
         self.LoopSetup(dir)
 
-        if (degrees == 0):
+        if (steps == 0):
             return
-        steps = self.degreeToSteps(degrees)
-        print("turn step:",steps)
+        print(f"Moving {steps} Steps!")
         for i in range(steps):
             self.digital_write(self.step_pin, True)
             time.sleep(self.delay)
