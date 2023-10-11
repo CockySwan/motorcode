@@ -80,7 +80,7 @@ class DRV8825():
     def TurnFrames(self, dir, frames):
         # Frames to degrees 
         # 1944 = 1 frame
-        self.TurnAngle(dir, 1420 * frames)
+        self.TurnAngle(dir, 1408 * frames)
 
     def TurnAngle(self, dir, degrees):
         steps = self.degreeToSteps(degrees)
