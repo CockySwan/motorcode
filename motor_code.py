@@ -92,28 +92,29 @@ def user_settings(settings_file='./settings.json', just_folder=False):
     if not just_folder:
         settings['subfolder'] = input("(Default: \"Movie1\")") or "Movie1"
         settings['film_type'] = input("Super 8? [y/n] (Default: n)").lower() or 'n'
-        settings['film_length'] = int(input("What is your reel length in ft? (Default: 50)")) or 50
+        settings['film_length'] = input("What is your reel length in ft? (Default: 50)") or 50
+        settings['film_length'] = int(settings['film_length'])
     
     settings = refresh_movie_folder(settings)
     
     if not just_folder:
-        if os.path.isdir(settings['movie_folder']):
+        not_empty = bool(not len(os.listdir(settings['movie_folder'])) == 0)
+        if os.path.isdir(settings['movie_folder']) and not_empty:
             dir = os.listdir(settings['movie_folder'])
             nums = sorted([ int(num.split('.')[0]) for num in dir]) #split the names and sort numbers
             if len(nums) > 0:
                 settings['latest_pic'] = nums[-1]
-            else:
-                settings['latest_pic'] = 0
             
             # final_output = [ str(i)+".png" for i in nums] #append file extension and create another list.
             # print(final_output)
         else:
-            os.makedirs(settings['movie_folder'])
+            if not_empty:
+                os.makedirs(settings['movie_folder'])
 
 
-        image_path = f'{settings["movie_folder"]}/{settings["latest_pic"]}{settings["file_extension"]}'
         valid = True
         try:
+            image_path = f'{settings["movie_folder"]}/{settings["latest_pic"]}{settings["file_extension"]}'
             with Image.open(image_path, 'r') as im:
                 im.verify()            
         except:
@@ -121,11 +122,13 @@ def user_settings(settings_file='./settings.json', just_folder=False):
 
         if valid and settings['latest_pic'] > 0:
             settings['latest_pic'] += 1
+        else:
+            settings['latest_pic'] = 0
 
         print(valid, settings['latest_pic'])
 
         if settings['film_type'] == 'n':
-            setttings['frames'] = settings['film_length'] * 80
+            settings['frames'] = settings['film_length'] * 80
         elif settings['film_type'] == 'y': 
             settings['frames'] = settings['film_length'] * 72
         else:
